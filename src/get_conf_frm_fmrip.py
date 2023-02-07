@@ -10,9 +10,12 @@ import pandas as pd
 import json
 import argparse
 
-NUSCHOICES= ["36P", "9P", "6P", "12P",
+
+NUSCHOICES= ["36P", "9P", "6P", 
              "aCompCor", "24aCompCor", "24aCompCorGsr",
-             "globalsig", "globalsig4", "linear" ]
+             "globalsig", "globalsig4", "linear",
+             "2phys", "2physGsr", "8phys" ]
+
 
 def get_spikereg_confounds(motion_ts, threshold):
     """
@@ -89,6 +92,7 @@ def get_confounds(confounds_file, kind="36P", spikereg_threshold=None,
         globalsignalcol = ['GlobalSignal']
         compCorregex = 'aCompCor'
         framewisecol = 'FramewiseDisplacement'
+        phys2cols = ['CSF', 'WhiteMatter']
 
     elif 'global_signal' in df:
         print("detected new confounds names")
@@ -98,6 +102,7 @@ def get_confounds(confounds_file, kind="36P", spikereg_threshold=None,
         globalsignalcol = ['global_signal']
         compCorregex = 'a_comp_cor_'
         framewisecol = 'framewise_displacement'
+        phys2cols = ['csf', 'white_matter'] 
 
     else:
         print("trouble reading necessary columns from confounds file. exiting")
@@ -135,6 +140,21 @@ def get_confounds(confounds_file, kind="36P", spikereg_threshold=None,
     gsr_der2 = gsr_der ** 2
     gsr4 = pd.concat((gsr, gsr2, gsr_der, gsr_der2), axis=1)
 
+    # 2phys
+    phy2 = df[phys2cols]
+    phy2gsr = pd.concat((phy2,df[globalsignalcol]),axis=1)
+
+    phy2_der = phy2.diff().fillna(0)
+    phy2_der.columns = [c + "_der" for c in phy2_der.columns]
+    
+    phy4 = pd.concat((phy2,phy2_der), axis=1)
+    
+    phy4_2 = phy4 ** 2 
+    phy4_2.columns = [c + "_2" for c in phy4_2.columns]
+
+    # phy8    
+    phy8 = pd.concat((phy4,phy4_2), axis=1)
+
     if kind == "globalsig":
         confounds = gsr
     elif kind == "globalsig4":
@@ -147,6 +167,12 @@ def get_confounds(confounds_file, kind="36P", spikereg_threshold=None,
         confounds = p9
     elif kind == "6P":
         confounds = p6
+    elif kind == "2phys":
+        confounds = phy2 
+    elif kind == "2physGsr":
+        confounds = phy2gsr
+    elif kind == "8phys":
+        confounds = phy8
     elif kind == "linear":
         pass
     else:
