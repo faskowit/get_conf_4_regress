@@ -316,7 +316,7 @@ def main():
                                         args.cen_out_file)
 
     # write it out
-    outconf.to_csv(''.join([args.out, '_conf.csv']),index=False,float_format='%.6g')
+    outconf.to_csv(''.join([args.out, '_conf.csv']),index=False,float_format='%.8g')
 
     if outdfstat is not None:
         outdfstat.to_csv(''.join([args.out, '_outlierstat.csv']),index=False)
